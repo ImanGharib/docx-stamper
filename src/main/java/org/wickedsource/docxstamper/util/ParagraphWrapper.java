@@ -173,41 +173,69 @@ public class ParagraphWrapper {
         StringBuilder builder = new StringBuilder();
         StringBuilder remain = new StringBuilder();
         Pattern complete = Pattern.compile("\\$\\{.*?}");
-        Pattern notComplete = Pattern.compile(".*\\$(\\{(.*))?");
+        Pattern notComplete = Pattern.compile("\\$(\\{(\\w)*(?!}))?$");
 
         for (IndexedRun run : runs) {
-            // run.getRun().getParent();
             builder.append(RunUtil.getText(run.getRun()));
             String thisRun = RunUtil.getText(run.getRun());
             Matcher notCompleteMatch = notComplete.matcher(builder.toString());
-            Matcher completeMatch = complete.matcher(builder.toString());
-            RPr rPr;
-            String placeholder = "";
-            int index = 0;
-            int placeolderInRun = 0;
-            //remain.append(fix.toString().replaceAll("\\$\\{.*?}", ""));
+          //  int index = 0;
             if (complete.matcher(thisRun).find()) {
-                while (completeMatch.find(index)) {
-                    rPr = run.getRun().getRPr();
-                    placeholder = completeMatch.group();
-                    index = completeMatch.end();
-                    builder = new StringBuilder();
-                    if (!"".equals(placeholder)) {
-                        placeholderRpr.put(placeholder + "_" + run.getStartIndex() + placeolderInRun, rPr);
-                    }
-                    placeolderInRun++;
-                }
+	             findPlaceholder(run, builder, placeholderRpr);
             }
             if (notComplete.matcher(thisRun).find()) {
-                while (notCompleteMatch.find(index)) {
+                while (notCompleteMatch.find()) {
                     remain.append(notCompleteMatch.group());
+	                findPlaceholderNotComplete(run, remain, placeholderRpr);
                 }
             }
-
         }
-
         return placeholderRpr;
     }
+
+    private LinkedHashMap<String, RPr> findPlaceholder(IndexedRun run, StringBuilder builder, LinkedHashMap<String, RPr> placeholderRpr) {
+        Pattern complete = Pattern.compile("\\$\\{.*?}");
+        Matcher completeMatch = complete.matcher(builder.toString());
+        RPr rPr;
+        String placeholder = "";
+        int index = 0;
+        int placeolderInRun = 0;
+        String thisRun = RunUtil.getText(run.getRun());
+        if (complete.matcher(thisRun).find()) {
+            while (completeMatch.find(index)) {
+                rPr = run.getRun().getRPr();
+                placeholder = completeMatch.group();
+                index = completeMatch.end();
+                //builder = new StringBuilder();
+                if (!"".equals(placeholder)) {
+                    placeholderRpr.put(placeholder + "_" + run.getStartIndex() + placeolderInRun, rPr);
+                }
+                placeolderInRun++;
+            }
+        }
+        return placeholderRpr;
+    }
+	private LinkedHashMap<String, RPr> findPlaceholderNotComplete(IndexedRun run, StringBuilder builder, LinkedHashMap<String, RPr> placeholderRpr) {
+		Pattern complete = Pattern.compile("\\$\\{.*?}");
+		Matcher completeMatch = complete.matcher(builder.toString());
+		RPr rPr;
+		String placeholder = "";
+		int index = 0;
+		int placeolderInRun = 0;
+		if (complete.matcher(builder).find()) {
+			while (completeMatch.find(index)) {
+				rPr = run.getRun().getRPr();
+				placeholder = completeMatch.group();
+				index = completeMatch.end();
+
+				if (!"".equals(placeholder)) {
+					placeholderRpr.put(placeholder + "_" + run.getStartIndex() + placeolderInRun, rPr);
+				}
+				placeolderInRun++;
+			}
+		}
+		return placeholderRpr;
+	}
 
     /**
      * Returns the list of runs that are aggregated. Depending on what modifications were done to the aggregated text
