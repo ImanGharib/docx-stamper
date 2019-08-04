@@ -171,25 +171,39 @@ public class ParagraphWrapper {
     private LinkedHashMap<String, RPr> getPlaceholderAndStyle(List<IndexedRun> runs) {
         LinkedHashMap<String, RPr> placeholderRpr = new LinkedHashMap<>();
         StringBuilder builder = new StringBuilder();
+        StringBuilder remain = new StringBuilder();
+        Pattern complete = Pattern.compile("\\$\\{.*?}");
+        Pattern notComplete = Pattern.compile(".*\\$(\\{(.*))?");
 
         for (IndexedRun run : runs) {
+            // run.getRun().getParent();
             builder.append(RunUtil.getText(run.getRun()));
-            Pattern p = Pattern.compile("\\$\\{.*?}");
-            Matcher m = p.matcher(builder.toString());
-            RPr rPr = new RPr();
+            String thisRun = RunUtil.getText(run.getRun());
+            Matcher notCompleteMatch = notComplete.matcher(builder.toString());
+            Matcher completeMatch = complete.matcher(builder.toString());
+            RPr rPr;
             String placeholder = "";
             int index = 0;
             int placeolderInRun = 0;
-            while (m.find(index)) {
-                builder = new StringBuilder();
-                rPr = run.getRun().getRPr();
-                placeholder = m.group();
-                index = m.end();
-                placeolderInRun++;
-                if (!"".equals(placeholder)) {
-                    placeholderRpr.put(placeholder + "_" + run.getStartIndex()+ placeolderInRun, rPr);
+            //remain.append(fix.toString().replaceAll("\\$\\{.*?}", ""));
+            if (complete.matcher(thisRun).find()) {
+                while (completeMatch.find(index)) {
+                    rPr = run.getRun().getRPr();
+                    placeholder = completeMatch.group();
+                    index = completeMatch.end();
+                    builder = new StringBuilder();
+                    if (!"".equals(placeholder)) {
+                        placeholderRpr.put(placeholder + "_" + run.getStartIndex() + placeolderInRun, rPr);
+                    }
+                    placeolderInRun++;
                 }
             }
+            if (notComplete.matcher(thisRun).find()) {
+                while (notCompleteMatch.find(index)) {
+                    remain.append(notCompleteMatch.group());
+                }
+            }
+
         }
 
         return placeholderRpr;
