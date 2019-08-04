@@ -176,36 +176,43 @@ public class ParagraphWrapper {
         Pattern notComplete = Pattern.compile(".*\\$(\\{(.*))?");
 
         for (IndexedRun run : runs) {
-            // run.getRun().getParent();
             builder.append(RunUtil.getText(run.getRun()));
             String thisRun = RunUtil.getText(run.getRun());
             Matcher notCompleteMatch = notComplete.matcher(builder.toString());
-            Matcher completeMatch = complete.matcher(builder.toString());
-            RPr rPr;
-            String placeholder = "";
             int index = 0;
-            int placeolderInRun = 0;
-            //remain.append(fix.toString().replaceAll("\\$\\{.*?}", ""));
             if (complete.matcher(thisRun).find()) {
-                while (completeMatch.find(index)) {
-                    rPr = run.getRun().getRPr();
-                    placeholder = completeMatch.group();
-                    index = completeMatch.end();
-                    builder = new StringBuilder();
-                    if (!"".equals(placeholder)) {
-                        placeholderRpr.put(placeholder + "_" + run.getStartIndex() + placeolderInRun, rPr);
-                    }
-                    placeolderInRun++;
-                }
+                findPlaceholder(run, builder, placeholderRpr);
             }
             if (notComplete.matcher(thisRun).find()) {
                 while (notCompleteMatch.find(index)) {
                     remain.append(notCompleteMatch.group());
+                    findPlaceholder(run, remain, placeholderRpr);
                 }
             }
-
         }
+        return placeholderRpr;
+    }
 
+    private LinkedHashMap<String, RPr> findPlaceholder(IndexedRun run, StringBuilder builder, LinkedHashMap<String, RPr> placeholderRpr) {
+        Pattern complete = Pattern.compile("\\$\\{.*?}");
+        Matcher completeMatch = complete.matcher(builder.toString());
+        RPr rPr;
+        String placeholder = "";
+        int index = 0;
+        int placeolderInRun = 0;
+        String thisRun = RunUtil.getText(run.getRun());
+        if (complete.matcher(thisRun).find()) {
+            while (completeMatch.find(index)) {
+                rPr = run.getRun().getRPr();
+                placeholder = completeMatch.group();
+                index = completeMatch.end();
+                //builder = new StringBuilder();
+                if (!"".equals(placeholder)) {
+                    placeholderRpr.put(placeholder + "_" + run.getStartIndex() + placeolderInRun, rPr);
+                }
+                placeolderInRun++;
+            }
+        }
         return placeholderRpr;
     }
 
