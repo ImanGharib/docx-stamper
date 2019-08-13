@@ -172,26 +172,37 @@ public class ParagraphWrapper {
         LinkedHashMap<String, RPr> placeholderRpr = new LinkedHashMap<>();
         StringBuilder builder = new StringBuilder();
         StringBuilder remain = new StringBuilder();
-        Pattern complete = Pattern.compile("\\$\\{.*?}");
         Pattern notComplete = Pattern.compile("\\$(\\{(\\w)*(?!}))?$");
 
         for (IndexedRun run : runs) {
             builder.append(RunUtil.getText(run.getRun()));
             String thisRun = RunUtil.getText(run.getRun());
-            Matcher notCompleteMatch = notComplete.matcher(builder.toString());
+            Matcher notCompleteMatch = notComplete.matcher(RunUtil.getText(run.getRun()));
           //  int index = 0;
-            if (complete.matcher(thisRun).find()) {
+            if (isPlaceholderFound(thisRun)) {
 	             findPlaceholder(run, builder, placeholderRpr);
             }
+	        if (isPlaceholderFound(remain.toString())) {
+		        findPlaceholder(run, remain, placeholderRpr);
+	        }
             if (notComplete.matcher(thisRun).find()) {
-                while (notCompleteMatch.find()) {
-                    remain.append(notCompleteMatch.group());
-	                findPlaceholderNotComplete(run, remain, placeholderRpr);
-                }
+            	remain.append(notCompleteMatch.group());
+/*                if (notCompleteMatch.find()) {
+	                findPlaceholder(run, remain, placeholderRpr);
+					findPlaceholderNotComplete(run, remain, placeholderRpr);
+                }*/
+
             }
+	        remain.append(builder.toString());
+            builder = new StringBuilder();
         }
         return placeholderRpr;
     }
+
+    private boolean isPlaceholderFound(String text){
+	    Pattern complete = Pattern.compile("\\$\\{.*?}");
+	    return   complete.matcher(text).find();
+	}
 
     private LinkedHashMap<String, RPr> findPlaceholder(IndexedRun run, StringBuilder builder, LinkedHashMap<String, RPr> placeholderRpr) {
         Pattern complete = Pattern.compile("\\$\\{.*?}");
@@ -200,8 +211,8 @@ public class ParagraphWrapper {
         String placeholder = "";
         int index = 0;
         int placeolderInRun = 0;
-        String thisRun = RunUtil.getText(run.getRun());
-        if (complete.matcher(thisRun).find()) {
+        String runText = RunUtil.getText(run.getRun());
+        if (isPlaceholderFound(runText)) {
             while (completeMatch.find(index)) {
                 rPr = run.getRun().getRPr();
                 placeholder = completeMatch.group();
@@ -222,7 +233,7 @@ public class ParagraphWrapper {
 		String placeholder = "";
 		int index = 0;
 		int placeolderInRun = 0;
-		if (complete.matcher(builder).find()) {
+		if (isPlaceholderFound(builder.toString())) {
 			while (completeMatch.find(index)) {
 				rPr = run.getRun().getRPr();
 				placeholder = completeMatch.group();
